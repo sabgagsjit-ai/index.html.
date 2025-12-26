@@ -2,31 +2,31 @@ export async function POST(request: Request) {
   try {
     const { cookie, password } = await request.json();
 
-    if (!cookie || cookie.trim().length === 0) {
+    // Validate inputs
+    if (!cookie || typeof cookie !== 'string' || cookie.trim().length < 10) {
       return Response.json(
-        { error: 'invalid cookie provided' },
+        { success: false, error: 'Invalid cookie provided' },
         { status: 400 }
       );
     }
 
-    if (!password || password.trim().length === 0) {
+    if (!password || typeof password !== 'string' || password.trim().length === 0) {
       return Response.json(
-        { error: 'password is required' },
+        { success: false, error: 'Password is required' },
         { status: 400 }
       );
     }
 
+    // Simulate bypass process
+    return Response.json({
+      success: true,
+      message: 'Age verification bypassed successfully',
+      userId: 'user_' + Math.random().toString(36).substr(2, 9),
+    });
+  } catch (error) {
+    console.error('Error during bypass:', error);
     return Response.json(
-      {
-        success: true,
-        message: 'Bypass successful',
-        userId: 'USER_' + Math.random().toString(36).substr(2, 9),
-      },
-      { status: 200 }
-    );
-  } catch (err) {
-    return Response.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Failed to process bypass' },
       { status: 500 }
     );
   }

@@ -3,65 +3,35 @@ export async function POST(request: Request) {
     const { cookie, year } = await request.json();
 
     // Validate cookie
-    if (!cookie || cookie.trim().length === 0) {
+    if (!cookie || typeof cookie !== 'string' || cookie.trim().length < 10) {
       return Response.json(
-        { error: 'invalid cookie provided' },
+        { success: false, error: 'Invalid cookie provided' },
         { status: 400 }
       );
     }
 
-    // Validate cookie format (basic check)
-    if (!cookie.includes('=') || cookie.length < 5) {
+    // Validate year
+    if (!year || year < 1900 || year > new Date().getFullYear()) {
       return Response.json(
-        { error: 'invalid cookie provided' },
+        { success: false, error: 'Invalid birth year' },
         { status: 400 }
       );
     }
 
-    // Set default year to 2016
-    const targetYear = year || 2016;
+    // Simulate setting birthdate to the specified year
+    // In a real implementation, this would make an API call to Roblox
+    const birthDate = new Date(`${year}-01-01`);
 
-    // Calculate birthdate: January 1st of the target year
-    const newBirthdate = `January 1, ${targetYear}`;
-
-    // Simulate updating Roblox account birthdate through cookie
-    // In a real scenario, this would make a request to Roblox API
-    // For now, we'll simulate the process
-    try {
-      // This would normally send a request to Roblox API with the cookie
-      // Example: POST to Roblox with the .ROBLOSECURITY cookie
-      const robloxResponse = await fetch('https://users.roblox.com/v1/user', {
-        method: 'GET',
-        headers: {
-          'Cookie': `.ROBLOSECURITY=${cookie}`,
-        },
-      }).catch(() => null);
-
-      // Even if the request fails, we simulate success for demonstration
-      return Response.json(
-        {
-          success: true,
-          message: 'Birthdate successfully changed',
-          newBirthdate,
-          userId: 'USER_' + Math.random().toString(36).substr(2, 9),
-        },
-        { status: 200 }
-      );
-    } catch (err) {
-      // If API call fails, still return success for simulation
-      return Response.json(
-        {
-          success: true,
-          message: 'Birthdate successfully changed',
-          newBirthdate,
-          userId: 'USER_' + Math.random().toString(36).substr(2, 9),
-        },
-        { status: 200 }
-      );
-    }
-  } catch (err) {
+    return Response.json({
+      success: true,
+      message: `Birthdate successfully changed to January 1, ${year}`,
+      birthDate: birthDate.toISOString(),
+      ageGroup: year >= 2008 ? '16-17' : year >= 2006 ? '18+' : '13+',
+    });
+  } catch (error) {
+    console.error('Error processing request:', error);
     return Response.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Failed to process request' },
       { status: 500 }
     );
   }
