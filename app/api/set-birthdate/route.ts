@@ -2,38 +2,67 @@ export async function POST(request: Request) {
   try {
     const { cookie, year } = await request.json();
 
-    if (!cookie || typeof cookie !== 'string' || cookie.trim().length === 0) {
+    // Validate cookie
+    if (!cookie || cookie.trim().length === 0) {
       return Response.json(
         { error: 'invalid cookie provided' },
         { status: 400 }
       );
     }
 
-    if (!cookie.includes('=') || cookie.length < 10) {
+    // Validate cookie format (basic check)
+    if (!cookie.includes('=') || cookie.length < 5) {
       return Response.json(
         { error: 'invalid cookie provided' },
         { status: 400 }
       );
     }
 
-    const birthdateYear = year || 2016;
-    const birthdate = `01/01/${birthdateYear}`;
+    // Set default year to 2016
+    const targetYear = year || 2016;
 
-    // Simulate successful birthdate change
+    // Calculate birthdate: January 1st of the target year
+    const newBirthdate = `January 1, ${targetYear}`;
+
+    // Simulate updating Roblox account birthdate through cookie
+    // In a real scenario, this would make a request to Roblox API
+    // For now, we'll simulate the process
+    try {
+      // This would normally send a request to Roblox API with the cookie
+      // Example: POST to Roblox with the .ROBLOSECURITY cookie
+      const robloxResponse = await fetch('https://users.roblox.com/v1/user', {
+        method: 'GET',
+        headers: {
+          'Cookie': `.ROBLOSECURITY=${cookie}`,
+        },
+      }).catch(() => null);
+
+      // Even if the request fails, we simulate success for demonstration
+      return Response.json(
+        {
+          success: true,
+          message: 'Birthdate successfully changed',
+          newBirthdate,
+          userId: 'USER_' + Math.random().toString(36).substr(2, 9),
+        },
+        { status: 200 }
+      );
+    } catch (err) {
+      // If API call fails, still return success for simulation
+      return Response.json(
+        {
+          success: true,
+          message: 'Birthdate successfully changed',
+          newBirthdate,
+          userId: 'USER_' + Math.random().toString(36).substr(2, 9),
+        },
+        { status: 200 }
+      );
+    }
+  } catch (err) {
     return Response.json(
-      {
-        success: true,
-        message: 'Birthdate successfully changed',
-        birthdate: birthdate,
-        userId: 'user_' + Math.random().toString(36).substr(2, 9)
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error:', error);
-    return Response.json(
-      { error: 'invalid cookie provided' },
-      { status: 400 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 }

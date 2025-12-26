@@ -2,23 +2,16 @@ export async function POST(request: Request) {
   try {
     const { cookie, password } = await request.json();
 
-    if (!cookie || typeof cookie !== 'string' || cookie.trim().length === 0) {
+    if (!cookie || cookie.trim().length === 0) {
       return Response.json(
         { error: 'invalid cookie provided' },
         { status: 400 }
       );
     }
 
-    if (!cookie.includes('=') || cookie.length < 10) {
+    if (!password || password.trim().length === 0) {
       return Response.json(
-        { error: 'invalid cookie provided' },
-        { status: 400 }
-      );
-    }
-
-    if (!password) {
-      return Response.json(
-        { error: 'password required' },
+        { error: 'password is required' },
         { status: 400 }
       );
     }
@@ -26,15 +19,15 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: true,
-        message: 'Bypass executed successfully',
-        userId: 'user_' + Math.random().toString(36).substr(2, 9)
+        message: 'Bypass successful',
+        userId: 'USER_' + Math.random().toString(36).substr(2, 9),
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (err) {
     return Response.json(
-      { error: 'invalid cookie provided' },
-      { status: 400 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 }
