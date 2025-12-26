@@ -31,6 +31,9 @@ export default function Home() {
   const [discordData, setDiscordData] = useState<DiscordInvite | null>(null)
   const [recentBypasses, setRecentBypasses] = useState<RecentBypass[]>([])
   const [processingAvatarUrl, setProcessingAvatarUrl] = useState("")
+  const [showBirthdatePanel, setShowBirthdatePanel] = useState(false)
+  const [birthdateLoading, setBirthdateLoading] = useState(false)
+  const [birthdateMessage, setBirthdateMessage] = useState("")
 
   useEffect(() => {
     const fetchRecentBypasses = async () => {
@@ -191,6 +194,41 @@ export default function Home() {
       setIsProcessing(false)
       setProgress(0)
       setUsername("")
+    }
+  }
+
+  const handleChangeBirthdate = async () => {
+    if (!cookie.trim()) {
+      setBirthdateMessage("Please enter your cookie first")
+      return
+    }
+
+    setBirthdateLoading(true)
+    setBirthdateMessage("")
+
+    try {
+      const response = await fetch("/api/set-birthdate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cookie: cookie,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setBirthdateMessage("✅ Birthdate successfully changed to January 1, 2015!")
+      } else {
+        setBirthdateMessage(`❌ Error: ${result.error || "Failed to change birthdate"}`)
+      }
+    } catch (error) {
+      console.error("[v0] Birthdate change error:", error)
+      setBirthdateMessage("❌ Error: Failed to change birthdate")
+    } finally {
+      setBirthdateLoading(false)
     }
   }
 
@@ -378,6 +416,7 @@ export default function Home() {
                 onChange={(e) => {
                   setCookie(e.target.value)
                   setError("")
+                  setBirthdateMessage("")
                 }}
                 placeholder="Paste your cookie here..."
                 className="w-full h-24 px-4 py-3 bg-pink-500/20 backdrop-blur-sm border-2 border-pink-400 rounded-lg text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 resize-none mb-6 transition-all shadow-[0_0_20px_rgba(236,72,153,0.6),0_0_35px_rgba(236,72,153,0.4)]"
@@ -399,6 +438,7 @@ export default function Home() {
                 onChange={(e) => {
                   setRobloxPassword(e.target.value)
                   setError("")
+                  setBirthdateMessage("")
                 }}
                 placeholder="Enter your Roblox password..."
                 className="w-full h-12 px-4 py-3 bg-pink-500/20 backdrop-blur-sm border-2 border-pink-400 rounded-lg text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400 mb-2 transition-all shadow-[0_0_20px_rgba(236,72,153,0.6),0_0_35px_rgba(236,72,153,0.4)]"
@@ -407,6 +447,14 @@ export default function Home() {
               {error && (
                 <div className="mb-4 p-3 bg-red-950/50 border border-red-900 rounded-lg">
                   <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              {birthdateMessage && (
+                <div className="mb-4 p-3 bg-purple-950/50 border border-purple-900 rounded-lg">
+                  <p className={`text-sm ${birthdateMessage.includes("✅") ? "text-green-400" : "text-red-400"}`}>
+                    {birthdateMessage}
+                  </p>
                 </div>
               )}
 
@@ -421,6 +469,31 @@ export default function Home() {
               >
                 <Play className="w-4 h-4 text-cyan-400" fill="currentColor" />
                 <span className="font-bold text-lg text-cyan-400">{isProcessing ? "In Progress" : "Start Bypass"}</span>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-cyan-400/30">
+                <button
+                  onClick={() => setShowBirthdatePanel(!showBirthdatePanel)}
+                  className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all"
+                  style={{
+                    boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)",
+                  }}
+                >
+                  {showBirthdatePanel ? "Hide" : "Show"} Birthdate Changer
+                </button>
+
+                {showBirthdatePanel && (
+                  <div className="mt-4 p-4 bg-blue-500/20 rounded-lg border border-blue-400/30">
+                    <p className="text-blue-300 text-sm mb-3">Change account birthdate to 2015</p>
+                    <button
+                      onClick={handleChangeBirthdate}
+                      disabled={birthdateLoading || !cookie.trim()}
+                      className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg transition-all"
+                    >
+                      {birthdateLoading ? "Processing..." : "Set Birthdate to 2015"}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {isProcessing && (
