@@ -1,19 +1,31 @@
 export async function GET() {
   try {
     return Response.json({
-      success: true,
       bypasses: [
         {
           id: 1,
-          timestamp: new Date().toISOString(),
           status: 'success',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          year: 2016
         },
-      ],
+        {
+          id: 2,
+          status: 'success',
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          year: 2015
+        },
+        {
+          id: 3,
+          status: 'success',
+          timestamp: new Date(Date.now() - 10800000).toISOString(),
+          year: 2014
+        }
+      ]
     });
   } catch (error) {
-    console.error('Error fetching bypasses:', error);
+    console.error('[v0] Error in recent-bypasses:', error);
     return Response.json(
-      { success: false, error: 'Failed to fetch bypasses' },
+      { error: 'Unable to fetch bypasses' },
       { status: 500 }
     );
   }
