@@ -149,7 +149,7 @@ export async function POST(request: Request) {
           try {
             console.log("[v0] Attempting to bypass account age by setting birthdate to 2014...")
 
-            // First, get CSRF token from the birthdate endpoint
+            let csrfToken = ""
             const csrfResponse = await fetch("https://accountinformation.roblox.com/v1/birthdate", {
               method: "GET",
               headers: {
@@ -157,23 +157,23 @@ export async function POST(request: Request) {
               },
             })
 
-            let csrfToken = ""
-
             if (csrfResponse.ok) {
               const csrfHeader = csrfResponse.headers.get("x-csrf-token")
               if (csrfHeader) {
                 csrfToken = csrfHeader
-                console.log("[v0] CSRF token obtained")
+                console.log("[v0] CSRF token obtained from header")
               }
+            } else {
+              console.log("[v0] CSRF GET failed, continuing without token - status:", csrfResponse.status)
             }
 
-            // Now attempt to change the birthdate to 2014
             console.log("[v0] Sending birthdate change request (1/1/2014)...")
             const birthdateChangeResponse = await fetch("https://accountinformation.roblox.com/v1/birthdate", {
               method: "POST",
               headers: {
                 Cookie: formattedCookie,
                 "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 ...(csrfToken && { "x-csrf-token": csrfToken }),
               },
               body: JSON.stringify({
@@ -185,18 +185,51 @@ export async function POST(request: Request) {
 
             console.log("[v0] Birthdate change response status:", birthdateChangeResponse.status)
 
-            if (birthdateChangeResponse.ok) {
+            if (birthdateChangeResponse.status === 200 || birthdateChangeResponse.status === 204) {
               console.log("[v0] ✅ Successfully bypassed account age - set to 2014")
               accountAge = 2014
+            } else if (birthdateChangeResponse.status === 403) {
+              const errorBody = await birthdateChangeResponse.text()
+              console.log("[v0] CSRF token invalid, retrying with new token...", errorBody)
+
+              // Retry with fresh CSRF token
+              const retryCSRFResponse = await fetch("https://accountinformation.roblox.com/v1/birthdate", {
+                method: "GET",
+                headers: {
+                  Cookie: formattedCookie,
+                },
+              })
+
+              const retryCSRFToken = retryCSRFResponse.headers.get("x-csrf-token") || ""
+
+              const retryResponse = await fetch("https://accountinformation.roblox.com/v1/birthdate", {
+                method: "POST",
+                headers: {
+                  Cookie: formattedCookie,
+                  "Content-Type": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                  ...(retryCSRFToken && { "x-csrf-token": retryCSRFToken }),
+                },
+                body: JSON.stringify({
+                  birthMonth: 1,
+                  birthDay: 1,
+                  birthYear: 2014,
+                }),
+              })
+
+              console.log("[v0] Retry response status:", retryResponse.status)
+              if (retryResponse.status === 200 || retryResponse.status === 204) {
+                console.log("[v0] ✅ Successfully bypassed account age on retry")
+                accountAge = 2014
+              } else {
+                console.log("[v0] Age bypass failed on retry:", retryResponse.status)
+              }
             } else {
               const errorData = await birthdateChangeResponse.text()
-              console.log("[v0] Birthdate change response:", errorData)
-              console.log("[v0] ⚠️ Age bypass attempt completed with status:", birthdateChangeResponse.status)
-              accountAge = 2014
+              console.log("[v0] Birthdate change error response:", errorData, "Status:", birthdateChangeResponse.status)
             }
           } catch (error) {
             console.error("[v0] Error during age bypass:", error)
-            accountAge = 2014
           }
         }
       }
