@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Unlock, Play, Clock } from "lucide-react"
+import { Unlock, Play } from "lucide-react"
 import Link from "next/link"
 
 interface DiscordInvite {
@@ -10,12 +10,6 @@ interface DiscordInvite {
   }
   approximate_member_count: number
   approximate_presence_count: number
-}
-
-interface RecentBypass {
-  username: string
-  avatarUrl: string
-  timestamp: string
 }
 
 export default function Home() {
@@ -29,28 +23,7 @@ export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDiscordModal, setShowDiscordModal] = useState(false)
   const [discordData, setDiscordData] = useState<DiscordInvite | null>(null)
-  const [recentBypasses, setRecentBypasses] = useState<RecentBypass[]>([])
   const [processingAvatarUrl, setProcessingAvatarUrl] = useState("")
-
-  useEffect(() => {
-    const fetchRecentBypasses = async () => {
-      try {
-        const response = await fetch("/api/recent-bypasses")
-        const data = await response.json()
-        if (data.bypasses && Array.isArray(data.bypasses)) {
-          setRecentBypasses(data.bypasses)
-        }
-        console.log("[v0] Recent bypasses fetched:", data)
-      } catch (error) {
-        console.error("[v0] Failed to fetch recent bypasses:", error)
-      }
-    }
-
-    fetchRecentBypasses()
-
-    const interval = setInterval(fetchRecentBypasses, 10000)
-    return () => clearInterval(interval)
-  }, [])
 
   useEffect(() => {
     const hasSeenModal = localStorage.getItem("hasSeenDiscordModal")
@@ -138,23 +111,6 @@ export default function Home() {
           result.avatarUrl ||
           `https://www.roblox.com/headshot-thumbnail/image?userId=${result.userInfo.id}&width=150&height=150&format=png`
         setProcessingAvatarUrl(avatarUrl)
-
-        const newBypass: RecentBypass = {
-          username: result.userInfo.name,
-          avatarUrl: avatarUrl,
-          timestamp: new Date().toLocaleString("en-US", {
-            month: "2-digit",
-            day: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          }),
-        }
-
-        const updatedBypasses = [newBypass, ...recentBypasses].slice(0, 5)
-        setRecentBypasses(updatedBypasses)
       }
 
       const totalDuration = 20000
@@ -466,79 +422,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="w-full max-w-md mt-8 bg-purple-500/20 backdrop-blur-xl border-2 border-purple-400 shadow-[0_0_50px_rgba(168,85,247,0.8),0_0_80px_rgba(168,85,247,0.5),0_0_120px_rgba(168,85,247,0.3)]">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Clock className="w-6 h-6 text-purple-300" />
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
-                  Recent Bypass
-                </h2>
-              </div>
-
-              {recentBypasses.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-purple-300/60 text-sm">No recent bypasses yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {recentBypasses.map((bypass, index) => (
-                    <div
-                      key={index}
-                      className="bg-purple-400/30 backdrop-blur-sm rounded-lg p-4 border border-purple-300/30 hover:bg-purple-400/40 transition-all"
-                    >
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={bypass.avatarUrl || "/placeholder.svg"}
-                          alt={bypass.username}
-                          className="w-14 h-14 rounded-full border-2 border-purple-300 shadow-lg"
-                          onError={(e) => {
-                            e.currentTarget.src = "https://via.placeholder.com/150?text=Avatar"
-                          }}
-                        />
-                        <div className="flex-1">
-                          <p className="text-lg font-bold text-white mb-1">@{bypass.username}</p>
-                          <p className="text-purple-200 text-sm mb-2">Verification link successfully created</p>
-                          <div className="flex items-center gap-2 text-purple-300/80 text-xs">
-                            <Clock className="w-3 h-3" />
-                            <span>{bypass.timestamp}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-12 flex items-center gap-2 text-sm">
-            <span
-              className="bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent font-semibold"
-              style={{
-                filter: "drop-shadow(0 0 10px rgba(255, 100, 0, 0.9)) drop-shadow(0 0 20px rgba(255, 200, 0, 0.7))",
-              }}
-            >
-              Secure
-            </span>
-            <span className="text-zinc-600">•</span>
-            <span
-              className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent font-semibold"
-              style={{
-                filter: "drop-shadow(0 0 10px rgba(0, 255, 100, 0.9)) drop-shadow(0 0 20px rgba(0, 200, 150, 0.7))",
-              }}
-            >
-              Fast
-            </span>
-            <span className="text-zinc-600">•</span>
-            <span
-              className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent font-semibold"
-              style={{
-                filter: "drop-shadow(0 0 10px rgba(100, 100, 255, 0.9)) drop-shadow(0 0 20px rgba(150, 100, 255, 0.7))",
-              }}
-            >
-              Reliable
-            </span>
-          </div>
+          {/* Removed recent bypasses section */}
         </div>
       </div>
     </div>
