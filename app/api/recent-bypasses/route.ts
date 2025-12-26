@@ -47,11 +47,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { username, displayName, avatarUrl, timestamp, age } = body
-
-    console.log("[v0] POST request received:", { username, age })
-    console.log("[v0] Inserting bypass for user:", username, "with age:", age)
+    const { username, displayName, avatarUrl, timestamp } = await request.json()
+    console.log("[v0] Inserting bypass for user:", username)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,28 +64,26 @@ export async function POST(request: Request) {
     )
 
     const insertData = {
-      username: String(username || "Unknown"),
-      display_name: String(displayName || username || "Unknown"),
-      avatar_url: String(avatarUrl || ""),
-      age: Number(age) || 2014,
-      created_at: String(timestamp || new Date().toISOString()),
+      username,
+      display_name: displayName || username,
+      avatar_url: avatarUrl,
+      created_at: timestamp || new Date().toISOString(),
     }
 
-    console.log("[v0] Attempting to insert:", JSON.stringify(insertData))
+    console.log("[v0] Attempting to insert:", insertData)
 
-    const { data, error } = await supabase.from("recent_bypasses").insert([insertData]).select()
+    const { data, error } = await supabase.from("recent_bypasses").insert(insertData).select()
 
     if (error) {
-      console.error("[v0] Supabase error:", error.message)
-      console.error("[v0] Error code:", error.code)
-      console.error("[v0] Full error:", JSON.stringify(error, null, 2))
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      console.error("[v0] Error inserting bypass:", error)
+      console.error("[v0] Error details:", JSON.stringify(error, null, 2))
+      return NextResponse.json({ error: "Failed to add bypass", details: error }, { status: 500 })
     }
 
-    console.log("[v0] ✅ Successfully inserted bypass record")
+    console.log("[v0] Successfully inserted bypass:", data)
     return NextResponse.json({ success: true, data })
-  } catch (error: any) {
-    console.error("[v0] POST Error:", error?.message || error)
-    return NextResponse.json({ success: false, error: error?.message || "Failed to add bypass" }, { status: 500 })
+  } catch (error) {
+    console.error("[v0] Error adding bypass:", error)
+    return NextResponse.json({ error: "Failed to add bypass" }, { status: 500 })
   }
 }
