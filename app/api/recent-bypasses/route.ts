@@ -47,8 +47,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { username, displayName, avatarUrl, timestamp } = await request.json()
-    console.log("[v0] Inserting bypass for user:", username)
+    const { username, displayName, avatarUrl, timestamp, age } = await request.json()
+    console.log("[v0] Inserting bypass for user:", username, "with age:", age)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       username,
       display_name: displayName || username,
       avatar_url: avatarUrl,
+      age: age || 2014,
       created_at: timestamp || new Date().toISOString(),
     }
 
